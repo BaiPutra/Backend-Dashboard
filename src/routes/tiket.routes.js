@@ -19,6 +19,8 @@ module.exports = (app) => {
   router.get("/performaKanca", tiket.performaKanca);
 
   router.get("/perBagian", tiket.perBagian);
+
+  router.get("/jenisTiket", tiket.jenisTiket)
   
   app.use("/api/tiket", router);
 };

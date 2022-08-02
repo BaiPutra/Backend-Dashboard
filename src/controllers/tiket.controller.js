@@ -113,3 +113,13 @@ exports.perBagian = (req, res) => {
     else res.send(data);
   });
 };
+
+exports.jenisTiket = (req, res) => {
+  Tiket.jenisTiket((err, data) => {
+    if (err)
+      res.status(500).send({
+        message:err.message || "Some error occured",
+      })
+    else res.send(data);
+  })
+}

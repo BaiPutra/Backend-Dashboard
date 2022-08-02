@@ -101,7 +101,7 @@ Tiket.performaPemasang = (result) => {
 
 Tiket.perJenisMasalah = (result) => {
   const sqlQuery = `
-    SELECT j.jenisMasalah AS id, COUNT(1) AS tiketClose,
+    SELECT ROW_NUMBER() OVER(ORDER BY tiketClose ASC) AS id, j.jenisMasalah AS nama, COUNT(1) AS tiketClose,
     COUNT(CASE WHEN DATEDIFF(updateTiket, entryTiket) <= j.targetHari THEN 1 ELSE null END) AS targetIn,
     COUNT(CASE WHEN DATEDIFF(updateTiket, entryTiket) > j.targetHari THEN 1 ELSE null END) AS targetOut,
     ROUND(
@@ -110,7 +110,7 @@ Tiket.perJenisMasalah = (result) => {
     FROM tiket t JOIN jenistiket j
     ON t.jenisMasalah = j.jenisID
     WHERE t.tiketID LIKE '6%'
-    GROUP BY j.jenisMasalah ORDER BY tiketClose DESC;
+    GROUP BY j.jenisMasalah ORDER BY tiketClose ASC;
     `;
   sql.query(sqlQuery, (err, res) => {
     if (err) {
@@ -129,7 +129,7 @@ Tiket.perJenisMasalah = (result) => {
 
 Tiket.perTanggal = (result) => {
   const sqlQuery = `
-    SELECT DATE_FORMAT(updateTiket, '%m/%d/%y') AS id, COUNT(1) AS tiketClose,
+    SELECT ROW_NUMBER() OVER(ORDER BY updateTiket DESC) AS id, DATE_FORMAT(updateTiket, '%e %M %Y') AS tanggal, COUNT(1) AS tiketClose,
     COUNT(CASE WHEN DATEDIFF(updateTiket, entryTiket) <= j.targetHari THEN 1 ELSE null END) AS targetIn,
     COUNT(CASE WHEN DATEDIFF(updateTiket, entryTiket) > j.targetHari THEN 1 ELSE null END) AS targetOut,
     ROUND(
@@ -138,7 +138,7 @@ Tiket.perTanggal = (result) => {
     FROM tiket t JOIN jenistiket j
     ON t.jenisMasalah = j.jenisID
     WHERE updateTiket BETWEEN DATE_SUB(NOW(), INTERVAL 1 WEEK) AND NOW()
-    GROUP BY updateTiket ORDER BY updateTiket ASC;
+    GROUP BY updateTiket ORDER BY updateTiket DESC;
     `;
   sql.query(sqlQuery, (err, res) => {
     if (err) {
@@ -215,8 +215,6 @@ Tiket.performaKanca = (result) => {
   });
 };
 
-// query perBagian
-
 Tiket.perBagian = (result) => {
   let query = `
     SELECT p.bagian, COUNT(1) AS tiket_close,
@@ -229,6 +227,23 @@ Tiket.perBagian = (result) => {
     ON t.jenisMasalah = j.jenisID
     JOIN perangkat p ON t.tid = p.tid
     GROUP BY p.bagian ORDER BY tiket_close DESC;
+    `;
+  sql.query(query, (err, res) => {
+    if (err) {
+      console.log("error: ", err);
+      result(err, null);
+      return;
+    }
+    console.log("bagian: ", res);
+    result(null, res);
+  });
+};
+
+Tiket.jenisTiket = (result) => {
+  let query = `
+    SELECT ROW_NUMBER() OVER() AS id, jenisMasalah, targetHari 
+    FROM jenistiket 
+    WHERE targetHari >=0 AND jenisID < 18
     `;
   sql.query(query, (err, res) => {
     if (err) {
