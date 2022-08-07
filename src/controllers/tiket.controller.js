@@ -34,8 +34,7 @@ exports.create = (req, res) => {
 };
 
 exports.getAll = (req, res) => {
-  const ticketID = req.query.ticketID;
-  Tiket.getAll(ticketID, (err, data) => {
+  Tiket.getAll(req, (err, data) => {
     if (err)
       res.status(500).send({
         message: err.message || "Some error occurred while retrieving tickets",

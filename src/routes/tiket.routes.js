@@ -4,7 +4,9 @@ module.exports = (app) => {
   
   router.post("/", tiket.create);
 
-  router.get("/", tiket.getAll)
+  // router.get("/", tiket.getAll)
+
+  router.get(`/:startDate/:endDate`, tiket.getAll)
   
   router.get("/closedTicketLastWeek", tiket.closedTicketLastWeek);
 

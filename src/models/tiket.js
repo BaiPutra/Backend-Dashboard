@@ -28,7 +28,7 @@ Tiket.create = (newTiket, result) => {
   });
 };
 
-Tiket.getAll = (tiketID, result) => {
+Tiket.getAll = (request, result) => {
   let query = `
   SELECT t.tiketID AS id, a.tid, a.lokasi, a.nama AS kanca, DATE_FORMAT(entryTiket, '%e %M %Y') AS entryTiket, DATE_FORMAT(updateTiket, '%e %M %Y') AS updateTiket,
   COUNT(CASE WHEN DATEDIFF(updateTiket, entryTiket) <= j.targetHari THEN 1 ELSE null END) AS targetIn,
@@ -37,16 +37,14 @@ Tiket.getAll = (tiketID, result) => {
     SELECT b.tid, b.lokasi, k.nama
     FROM perangkat b JOIN kanca k 
     ON b.kancaID = k.kancaID
-    ) a 
+    ) a
   JOIN tiket t
   ON t.tid = a.tid
   JOIN jenistiket j
   ON t.jenisMasalah = j.jenisID
+  WHERE updateTiket BETWEEN '${request.params.startDate}' AND '${request.params.endDate}'
   GROUP BY t.tiketID
   `
-  if (tiketID) {
-    query += ` WHERE tiketID LIKE '${tiketID}%'`;
-  }
   sql.query(query, (err, res) => {
     if (err) {
       console.log("error ", err);
