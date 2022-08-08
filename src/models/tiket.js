@@ -44,7 +44,7 @@ Tiket.getAll = (request, result) => {
   ON t.jenisMasalah = j.jenisID
   WHERE updateTiket BETWEEN '${request.params.startDate}' AND '${request.params.endDate}'
   GROUP BY t.tiketID
-  `
+  `;
   sql.query(query, (err, res) => {
     if (err) {
       console.log("error ", err);
@@ -85,7 +85,7 @@ Tiket.closedTicketLastWeek = (result) => {
 
 Tiket.performaPemasang = (result) => {
   let query = `
-    SELECT i.nama, SUM(a.targetIn) + SUM(a.targetOut) AS total,
+    SELECT ROW_NUMBER() OVER(ORDER BY total DESC) AS id, i.nama, SUM(a.targetIn) + SUM(a.targetOut) AS total,
     SUM(a.targetIn) AS targetIn, SUM(a.targetOut) AS targetOut,
     ROUND((SUM(a.targetIn) / ((SUM(a.targetIn) + SUM(a.targetOut)))*100), 2)
     AS rateTarget
@@ -113,7 +113,7 @@ Tiket.performaPemasang = (result) => {
 
 Tiket.perJenisMasalah = (result) => {
   const sqlQuery = `
-    SELECT ROW_NUMBER() OVER(ORDER BY tiketClose ASC) AS id, j.jenisMasalah AS nama, COUNT(1) AS tiketClose,
+    SELECT ROW_NUMBER() OVER(ORDER BY tiketClose DESC) AS id, j.jenisMasalah AS nama, COUNT(1) AS tiketClose,
     COUNT(CASE WHEN DATEDIFF(updateTiket, entryTiket) <= j.targetHari THEN 1 ELSE null END) AS targetIn,
     COUNT(CASE WHEN DATEDIFF(updateTiket, entryTiket) > j.targetHari THEN 1 ELSE null END) AS targetOut,
     ROUND(
@@ -122,7 +122,7 @@ Tiket.perJenisMasalah = (result) => {
     FROM tiket t JOIN jenistiket j
     ON t.jenisMasalah = j.jenisID
     WHERE t.tiketID LIKE '6%'
-    GROUP BY j.jenisMasalah ORDER BY tiketClose ASC;
+    GROUP BY j.jenisMasalah ORDER BY tiketClose DESC;
     `;
   sql.query(sqlQuery, (err, res) => {
     if (err) {
@@ -176,9 +176,12 @@ Tiket.perMinggu = (result) => {
       CASE WHEN bagian = 'CRM' THEN 1 ELSE null END) AS crm,
     COUNT(
       CASE WHEN bagian = 'EDC' THEN 1 ELSE null END) AS edc,
-    COUNT(updateTiket) AS total
+    COUNT(updateTiket) AS total,
+    COUNT(CASE WHEN DATEDIFF(updateTiket, entryTiket) <= j.targetHari THEN 1 ELSE null END) AS targetIn
     FROM tiket t JOIN perangkat p
     ON t.tid = p.tid
+    JOIN jenistiket j
+    ON t.jenisMasalah = j.jenisID
     WHERE updateTiket > DATE_SUB(NOW(), INTERVAL 5 WEEK)
     GROUP BY WEEK(updateTiket)
     ORDER BY updateTiket;
@@ -200,7 +203,7 @@ Tiket.perMinggu = (result) => {
 
 Tiket.performaKanca = (result) => {
   let query = `
-    SELECT k.nama AS id, SUM(a.targetIn) + SUM(a.targetOut) AS total,
+    SELECT ROW_NUMBER() OVER(ORDER BY total DESC) AS id, k.nama AS nama, SUM(a.targetIn) + SUM(a.targetOut) AS total,
     SUM(a.targetIn) AS targetIn, SUM(a.targetOut) AS targetOut,
     ROUND((SUM(a.targetIn) / ((SUM(a.targetIn) + SUM(a.targetOut)))*100), 2)
     AS rateTarget
@@ -214,7 +217,6 @@ Tiket.performaKanca = (result) => {
     JOIN perangkat b ON a.tid = b.tid
     JOIN kanca k ON b.kancaID = k.kancaID
     GROUP BY k.kancaID ORDER BY total DESC
-    LIMIT 10
     `;
   sql.query(query, (err, res) => {
     if (err) {
