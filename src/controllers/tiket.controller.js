@@ -1,38 +1,5 @@
 const Tiket = require("../models/tiket.js");
 
-exports.create = (req, res) => {
-  // Validate request
-  if (!req.body) {
-    res.status(400).send({
-      message: "Content can not be empty!",
-    });
-  }
-  // Create a Ticket
-  const tiket = new Tiket({
-    ticket_id: req.body.ticket_id,
-    merchant: req.body.merchant,
-    mid: req.body.mid,
-    tid: req.body.tid,
-    peruntukan: req.body.peruntukan,
-    entry_ticket: req.body.entry_ticket,
-    update_ticket: req.body.update_ticket,
-    jenis_masalah: req.body.jenis_masalah,
-    status: req.body.status,
-    kanwil: req.body.kanwil,
-    pemasang: req.body.pemasang,
-    target_hari: req.body.target_hari,
-  });
-  // Save Ticket in the database
-  Tiket.create(tiket, (err, data) => {
-    if (err)
-      res.status(500).send({
-        message:
-          err.message || "Some error occurred while creating the tickets.",
-      });
-    else res.send(data);
-  });
-};
-
 exports.getAll = (req, res) => {
   Tiket.getAll(req, (err, data) => {
     if (err)

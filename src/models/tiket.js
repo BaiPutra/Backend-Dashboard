@@ -16,34 +16,22 @@ const Tiket = function (Tiket) {
   this.nama_pemasang = Tiket.nama_pemasang;
 };
 
-Tiket.create = (newTiket, result) => {
-  sql.query("INSERT INTO tiket SET ?", Tiket, (err, res) => {
-    if (err) {
-      console.log("error: ", err);
-      result(err, null);
-      return;
-    }
-    console.log("created Tiket: ", { id: res.insertId, ...newTiket });
-    result(null, { id: res.insertId, ...newTiket });
-  });
-};
-
 Tiket.getAll = (request, result) => {
   let query = `
-  SELECT t.tiketID AS id, a.tid, a.lokasi, a.nama AS kanca, DATE_FORMAT(entryTiket, '%e %M %Y') AS entryTiket, DATE_FORMAT(updateTiket, '%e %M %Y') AS updateTiket,
-  COUNT(CASE WHEN DATEDIFF(updateTiket, entryTiket) <= j.targetHari THEN 1 ELSE null END) AS targetIn,
-  COUNT(CASE WHEN DATEDIFF(updateTiket, entryTiket) > j.targetHari THEN 1 ELSE null END) AS targetOut
-  FROM (
-    SELECT b.tid, b.lokasi, k.nama
-    FROM perangkat b JOIN kanca k 
-    ON b.kancaID = k.kancaID
-    ) a
-  JOIN tiket t
-  ON t.tid = a.tid
-  JOIN jenistiket j
-  ON t.jenisMasalah = j.jenisID
-  WHERE updateTiket BETWEEN '${request.params.startDate}' AND '${request.params.endDate}'
-  GROUP BY t.tiketID
+    SELECT t.tiketID AS id, a.tid, a.bagian, a.lokasi, a.nama AS kanca, DATE_FORMAT(entryTiket, '%e %M %Y') AS entryTiket, DATE_FORMAT(updateTiket, '%e %M %Y') AS updateTiket,
+    COUNT(CASE WHEN DATEDIFF(updateTiket, entryTiket) <= j.targetHari THEN 1 ELSE null END) AS targetIn,
+    COUNT(CASE WHEN DATEDIFF(updateTiket, entryTiket) > j.targetHari THEN 1 ELSE null END) AS targetOut
+    FROM (
+      SELECT b.tid, b.bagian, b.lokasi, k.nama
+      FROM perangkat b JOIN kanca k 
+      ON b.kancaID = k.kancaID
+      ) a
+    JOIN tiket t
+    ON t.tid = a.tid
+    JOIN jenistiket j
+    ON t.jenisMasalah = j.jenisID
+    WHERE a.bagian IN (${request.params.bagian}) AND updateTiket BETWEEN '${request.params.startDate}' AND '${request.params.endDate}'
+    GROUP BY t.tiketID
   `;
   sql.query(query, (err, res) => {
     if (err) {
@@ -80,6 +68,35 @@ Tiket.closedTicketLastWeek = (result) => {
       return;
     }
     result({ kind: "not_found" }, null);
+  });
+};
+
+Tiket.performaKanca = (request, result) => {
+  let query = `
+    SELECT ROW_NUMBER() OVER(ORDER BY total DESC) AS id, k.nama AS nama, SUM(a.targetIn) + SUM(a.targetOut) AS total,
+    SUM(a.targetIn) AS targetIn, SUM(a.targetOut) AS targetOut,
+    ROUND((SUM(a.targetIn) / ((SUM(a.targetIn) + SUM(a.targetOut)))*100), 2)
+    AS rateTarget
+    FROM (
+    SELECT t.tid, COUNT(1) AS tiket_close,
+      COUNT(CASE WHEN DATEDIFF(updateTiket, entryTiket) <= j.targetHari THEN 1 ELSE null END) AS targetIn,
+      COUNT(CASE WHEN DATEDIFF(updateTiket, entryTiket) > j.targetHari THEN 1 ELSE null END) AS targetOut
+      FROM tiket t JOIN jenistiket j
+      ON t.jenisMasalah = j.jenisID
+      WHERE tiketID LIKE '${request.params.bagian}'
+      GROUP BY t.tid ORDER BY tiket_close DESC ) a
+    JOIN perangkat b ON a.tid = b.tid
+    JOIN kanca k ON b.kancaID = k.kancaID
+    GROUP BY k.kancaID ORDER BY total DESC
+    `;
+  sql.query(query, (err, res) => {
+    if (err) {
+      console.log("error: ", err);
+      result(err, null);
+      return;
+    }
+    console.log("list kanca: ", res);
+    result(null, res);
   });
 };
 
@@ -198,34 +215,6 @@ Tiket.perMinggu = (result) => {
       return;
     }
     result({ kind: "nout_found" }, null);
-  });
-};
-
-Tiket.performaKanca = (result) => {
-  let query = `
-    SELECT ROW_NUMBER() OVER(ORDER BY total DESC) AS id, k.nama AS nama, SUM(a.targetIn) + SUM(a.targetOut) AS total,
-    SUM(a.targetIn) AS targetIn, SUM(a.targetOut) AS targetOut,
-    ROUND((SUM(a.targetIn) / ((SUM(a.targetIn) + SUM(a.targetOut)))*100), 2)
-    AS rateTarget
-    FROM (
-    SELECT t.tid, COUNT(1) AS tiket_close,
-      COUNT(CASE WHEN DATEDIFF(updateTiket, entryTiket) <= j.targetHari THEN 1 ELSE null END) AS targetIn,
-      COUNT(CASE WHEN DATEDIFF(updateTiket, entryTiket) > j.targetHari THEN 1 ELSE null END) AS targetOut
-      FROM tiket t JOIN jenistiket j
-      ON t.jenisMasalah = j.jenisID
-      GROUP BY t.tid ORDER BY tiket_close DESC ) a
-    JOIN perangkat b ON a.tid = b.tid
-    JOIN kanca k ON b.kancaID = k.kancaID
-    GROUP BY k.kancaID ORDER BY total DESC
-    `;
-  sql.query(query, (err, res) => {
-    if (err) {
-      console.log("error: ", err);
-      result(err, null);
-      return;
-    }
-    console.log("list kanca: ", res);
-    result(null, res);
   });
 };
 
