@@ -10,6 +10,16 @@ exports.getAll = (req, res) => {
   });
 };
 
+exports.performaKanca = (req, res) => {
+  Tiket.performaKanca(req, (err, data) => {
+    if (err)
+      res.status(500).send({
+        message: err.message || "Some error occurred",
+      });
+    else res.send(data);
+  });
+};
+
 exports.closedTicketLastWeek = (req, res) => {
   Tiket.closedTicketLastWeek((err, data) => {
     if (err)
@@ -59,16 +69,6 @@ exports.perMinggu = (req, res) => {
     else res.send(data)
   })
 }
-
-exports.performaKanca = (req, res) => {
-  Tiket.performaKanca((err, data) => {
-    if (err)
-      res.status(500).send({
-        message: err.message || "Some error occurred",
-      });
-    else res.send(data);
-  });
-};
 
 exports.perBagian = (req, res) => {
   Tiket.perBagian((err, data) => {

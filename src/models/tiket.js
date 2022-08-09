@@ -83,7 +83,7 @@ Tiket.performaKanca = (request, result) => {
       COUNT(CASE WHEN DATEDIFF(updateTiket, entryTiket) > j.targetHari THEN 1 ELSE null END) AS targetOut
       FROM tiket t JOIN jenistiket j
       ON t.jenisMasalah = j.jenisID
-      WHERE tiketID LIKE '${request.params.bagian}'
+      WHERE tiketID LIKE '${request.params.bagian}%'
       GROUP BY t.tid ORDER BY tiket_close DESC ) a
     JOIN perangkat b ON a.tid = b.tid
     JOIN kanca k ON b.kancaID = k.kancaID
