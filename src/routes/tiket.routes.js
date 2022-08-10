@@ -6,13 +6,13 @@ module.exports = (app) => {
   
   router.get("/closedTicketLastWeek", tiket.closedTicketLastWeek);
 
-  router.get(`/performaKanca/:bagian`, tiket.performaKanca);
+  router.get(`/performaKanca/:bagian/:startDate/:endDate`, tiket.performaKanca);
 
-  router.get("/performaPemasang", tiket.performaPemasang);
+  router.get("/performaImplementor/:bagian", tiket.performaImpementor);
 
-  router.get("/perJenisMasalah", tiket.perJenisMasalah);
+  router.get("/perTanggal/:bagian", tiket.perTanggal);
 
-  router.get("/perTanggal", tiket.perTanggal);
+  router.get("/perJenisMasalah/:bagian", tiket.perJenisMasalah);
 
   router.get("/perMinggu", tiket.perMinggu);
 

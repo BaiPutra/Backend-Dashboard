@@ -20,6 +20,26 @@ exports.performaKanca = (req, res) => {
   });
 };
 
+exports.performaImpementor = (req, res) => {
+  Tiket.performaImplementor(req, (err, data) => {
+    if (err)
+      res.status(500).send({
+        message: err.message || "Some error occurred",
+      });
+    else res.send(data);
+  });
+};
+
+exports.perTanggal = (req, res) => {
+  Tiket.perTanggal(req, (err, data) => {
+    if (err)
+      res.status(500).send({
+        message: err.message || "Some error occurred",
+      });
+    else res.send(data);
+  });
+};
+
 exports.closedTicketLastWeek = (req, res) => {
   Tiket.closedTicketLastWeek((err, data) => {
     if (err)
@@ -30,28 +50,8 @@ exports.closedTicketLastWeek = (req, res) => {
   });
 };
 
-exports.performaPemasang = (req, res) => {
-  Tiket.performaPemasang((err, data) => {
-    if (err)
-      res.status(500).send({
-        message: err.message || "Some error occurred",
-      });
-    else res.send(data);
-  });
-};
-
 exports.perJenisMasalah = (req, res) => {
-  Tiket.perJenisMasalah((err, data) => {
-    if (err)
-      res.status(500).send({
-        message: err.message || "Some error occurred",
-      });
-    else res.send(data);
-  });
-};
-
-exports.perTanggal = (req, res) => {
-  Tiket.perTanggal((err, data) => {
+  Tiket.perJenisMasalah(req, (err, data) => {
     if (err)
       res.status(500).send({
         message: err.message || "Some error occurred",

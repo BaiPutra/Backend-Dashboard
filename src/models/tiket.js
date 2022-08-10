@@ -1,4 +1,4 @@
-const { query } = require("express");
+const { query, request } = require("express");
 const sql = require("./db.js");
 
 const Tiket = function (Tiket) {
@@ -7,7 +7,7 @@ const Tiket = function (Tiket) {
   this.bagian = Tiket.bagian;
   this.lokasi = Tiket.lokasi;
   this.jenisMasalah = Tiket.jenisMasalah;
-  this.pemasang = Tiket.pemasang;
+  this.implementor = Tiket.implementor;
   this.entryTiket = Tiket.entryTiket;
   this.updateTiket = Tiket.updateTiket;
   this.status = Tiket.status;
@@ -45,7 +45,7 @@ Tiket.getAll = (request, result) => {
 };
 
 Tiket.closedTicketLastWeek = (result) => {
-  const sqlQuery = `
+  const query = `
     SELECT COUNT(1) AS tiket_selesai, 
     COUNT(CASE WHEN DATEDIFF(updateTiket, entryTiket) <= j.targetHari THEN 1 ELSE null END) AS targetIn,
     COUNT(CASE WHEN DATEDIFF(updateTiket, entryTiket) > j.targetHari THEN 1 ELSE null END) AS targetOut,
@@ -56,7 +56,7 @@ Tiket.closedTicketLastWeek = (result) => {
     tiket t JOIN jenistiket j
     ON t.jenisMasalah = j.jenisID )
   `;
-  sql.query(sqlQuery, (err, res) => {
+  sql.query(query, (err, res) => {
     if (err) {
       console.log("error: ", err);
       result(err, null);
@@ -83,7 +83,9 @@ Tiket.performaKanca = (request, result) => {
       COUNT(CASE WHEN DATEDIFF(updateTiket, entryTiket) > j.targetHari THEN 1 ELSE null END) AS targetOut
       FROM tiket t JOIN jenistiket j
       ON t.jenisMasalah = j.jenisID
-      WHERE tiketID LIKE '${request.params.bagian}%'
+      JOIN perangkat p
+      ON t.tid = p.tid
+      WHERE bagian IN (${request.params.bagian}) AND updateTiket BETWEEN '${request.params.startDate}' AND '${request.params.endDate}'
       GROUP BY t.tid ORDER BY tiket_close DESC ) a
     JOIN perangkat b ON a.tid = b.tid
     JOIN kanca k ON b.kancaID = k.kancaID
@@ -100,7 +102,7 @@ Tiket.performaKanca = (request, result) => {
   });
 };
 
-Tiket.performaPemasang = (result) => {
+Tiket.performaImplementor = (request, result) => {
   let query = `
     SELECT ROW_NUMBER() OVER(ORDER BY total DESC) AS id, i.nama, SUM(a.targetIn) + SUM(a.targetOut) AS total,
     SUM(a.targetIn) AS targetIn, SUM(a.targetOut) AS targetOut,
@@ -112,6 +114,9 @@ Tiket.performaPemasang = (result) => {
       COUNT(CASE WHEN DATEDIFF(updateTiket, entryTiket) > j.targetHari THEN 1 ELSE null END) AS targetOut
       FROM tiket t JOIN jenistiket j
       ON t.jenisMasalah = j.jenisID
+      JOIN perangkat p
+      ON t.tid = p.tid
+      WHERE bagian IN (${request.params.bagian})
       GROUP BY t.tid ORDER BY tiket_close DESC ) a
     JOIN perangkat b ON a.tid = b.tid
     JOIN implementor i ON b.implementorID = i.implementorID
@@ -123,12 +128,12 @@ Tiket.performaPemasang = (result) => {
       result(err, null);
       return;
     }
-    console.log("list pemasang: ", res);
+    console.log("list implementor: ", res);
     result(null, res);
   });
 };
 
-Tiket.perJenisMasalah = (result) => {
+Tiket.perJenisMasalah = (request, result) => {
   const sqlQuery = `
     SELECT ROW_NUMBER() OVER(ORDER BY tiketClose DESC) AS id, j.jenisMasalah AS nama, COUNT(1) AS tiketClose,
     COUNT(CASE WHEN DATEDIFF(updateTiket, entryTiket) <= j.targetHari THEN 1 ELSE null END) AS targetIn,
@@ -138,7 +143,9 @@ Tiket.perJenisMasalah = (result) => {
         AS rateTarget
     FROM tiket t JOIN jenistiket j
     ON t.jenisMasalah = j.jenisID
-    WHERE t.tiketID LIKE '6%'
+    JOIN perangkat p
+    ON t.tid = p.tid
+    WHERE bagian IN (${request.params.bagian})
     GROUP BY j.jenisMasalah ORDER BY tiketClose DESC;
     `;
   sql.query(sqlQuery, (err, res) => {
@@ -156,7 +163,7 @@ Tiket.perJenisMasalah = (result) => {
   });
 };
 
-Tiket.perTanggal = (result) => {
+Tiket.perTanggal = (request, result) => {
   const sqlQuery = `
     SELECT ROW_NUMBER() OVER(ORDER BY updateTiket DESC) AS id, DATE_FORMAT(updateTiket, '%e %M %Y') AS tanggal, COUNT(1) AS tiketClose,
     COUNT(CASE WHEN DATEDIFF(updateTiket, entryTiket) <= j.targetHari THEN 1 ELSE null END) AS targetIn,
@@ -166,7 +173,9 @@ Tiket.perTanggal = (result) => {
         AS rateTarget
     FROM tiket t JOIN jenistiket j
     ON t.jenisMasalah = j.jenisID
-    WHERE updateTiket BETWEEN DATE_SUB(NOW(), INTERVAL 1 WEEK) AND NOW()
+    JOIN perangkat p
+    ON t.tid = p.tid
+    WHERE bagian IN (${request.params.bagian}) AND updateTiket BETWEEN DATE_SUB(NOW(), INTERVAL 1 WEEK) AND NOW()
     GROUP BY updateTiket ORDER BY updateTiket DESC;
     `;
   sql.query(sqlQuery, (err, res) => {
@@ -189,10 +198,13 @@ Tiket.perMinggu = (result) => {
     SELECT DATE_FORMAT(updateTiket, '%m/%d/%y') AS dari, MAX(DATE_FORMAT(updateTiket, '%m/%d/%y')) AS sampai,
     COUNT(
       CASE WHEN bagian = 'ATM' THEN 1 ELSE null END) AS atm,
+    COUNT(CASE WHEN DATEDIFF(updateTiket, entryTiket) <= j.targetHari AND bagian = 'ATM' THEN 1 ELSE null END) AS targetInATM,
     COUNT(
       CASE WHEN bagian = 'CRM' THEN 1 ELSE null END) AS crm,
+    COUNT(CASE WHEN DATEDIFF(updateTiket, entryTiket) <= j.targetHari AND bagian = 'CRM' THEN 1 ELSE null END) AS targetInCRM,
     COUNT(
       CASE WHEN bagian = 'EDC' THEN 1 ELSE null END) AS edc,
+    COUNT(CASE WHEN DATEDIFF(updateTiket, entryTiket) <= j.targetHari AND bagian = 'EDC' THEN 1 ELSE null END) AS targetInEDC,
     COUNT(updateTiket) AS total,
     COUNT(CASE WHEN DATEDIFF(updateTiket, entryTiket) <= j.targetHari THEN 1 ELSE null END) AS targetIn
     FROM tiket t JOIN perangkat p
