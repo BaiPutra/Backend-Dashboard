@@ -18,7 +18,7 @@ const Tiket = function (Tiket) {
 
 Tiket.getAll = (request, result) => {
   let query = `
-    SELECT t.tiketID AS id, a.tid, a.bagian, a.lokasi, a.nama AS kanca, DATE_FORMAT(entryTiket, '%e %M %Y') AS entryTiket, DATE_FORMAT(updateTiket, '%e %M %Y') AS updateTiket,
+    SELECT t.tiketID AS id, a.tid, a.bagian, j.jenisMasalah, a.lokasi, a.nama AS kanca, DATE_FORMAT(entryTiket, '%e %M %Y') AS entryTiket, DATE_FORMAT(updateTiket, '%e %M %Y') AS updateTiket,
     COUNT(CASE WHEN DATEDIFF(updateTiket, entryTiket) <= j.targetHari THEN 1 ELSE null END) AS targetIn,
     COUNT(CASE WHEN DATEDIFF(updateTiket, entryTiket) > j.targetHari THEN 1 ELSE null END) AS targetOut
     FROM (
@@ -116,7 +116,7 @@ Tiket.performaImplementor = (request, result) => {
       ON t.jenisMasalah = j.jenisID
       JOIN perangkat p
       ON t.tid = p.tid
-      WHERE bagian IN (${request.params.bagian})
+      WHERE bagian IN (${request.params.bagian}) AND updateTiket BETWEEN '${request.params.startDate}' AND '${request.params.endDate}'
       GROUP BY t.tid ORDER BY tiket_close DESC ) a
     JOIN perangkat b ON a.tid = b.tid
     JOIN implementor i ON b.implementorID = i.implementorID
@@ -145,7 +145,7 @@ Tiket.perJenisMasalah = (request, result) => {
     ON t.jenisMasalah = j.jenisID
     JOIN perangkat p
     ON t.tid = p.tid
-    WHERE bagian IN (${request.params.bagian})
+    WHERE bagian IN (${request.params.bagian}) AND updateTiket BETWEEN '${request.params.startDate}' AND '${request.params.endDate}'
     GROUP BY j.jenisMasalah ORDER BY tiketClose DESC;
     `;
   sql.query(sqlQuery, (err, res) => {

@@ -2,17 +2,17 @@ module.exports = (app) => {
   const tiket = require("../controllers/tiket.controller.js");
   var router = require("express").Router();
 
-  router.get(`/:bagian/:startDate/:endDate`, tiket.getAll)
+  router.get("/:bagian/:startDate/:endDate", tiket.getAll)
   
   router.get("/closedTicketLastWeek", tiket.closedTicketLastWeek);
 
-  router.get(`/performaKanca/:bagian/:startDate/:endDate`, tiket.performaKanca);
+  router.get("/performaKanca/:bagian/:startDate/:endDate", tiket.performaKanca);
 
-  router.get("/performaImplementor/:bagian", tiket.performaImpementor);
+  router.get("/performaImplementor/:bagian/:startDate/:endDate", tiket.performaImpementor);
 
   router.get("/perTanggal/:bagian", tiket.perTanggal);
 
-  router.get("/perJenisMasalah/:bagian", tiket.perJenisMasalah);
+  router.get("/perJenisMasalah/:bagian/:startDate/:endDate", tiket.perJenisMasalah);
 
   router.get("/perMinggu", tiket.perMinggu);
 
