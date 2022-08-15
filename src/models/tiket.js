@@ -1,5 +1,7 @@
 const { query, request } = require("express");
 const sql = require("./db.js");
+// const bodyParser = require("body-parser");
+// app.use(bodyParser.urlencoded({ extended: true }));
 
 const Tiket = function (Tiket) {
   this.tiketID = Tiket.tiketID;
@@ -16,9 +18,22 @@ const Tiket = function (Tiket) {
   this.nama_pemasang = Tiket.nama_pemasang;
 };
 
+Tiket.login = (request, result) => {
+  let query = `SELECT * FROM user WHERE username = '${request.body.username}' AND password = '${request.body.password}'`;
+  sql.query(query, (err, res) => {
+    if (err) {
+      console.log("error ", err);
+      result(err, null);
+      return;
+    }
+    console.log("message: ", res);
+    result(null, res);
+  });
+};
+
 Tiket.getAll = (request, result) => {
   let query = `
-    SELECT t.tiketID AS id, a.tid, a.bagian, j.jenisMasalah, a.lokasi, a.nama AS kanca, DATE_FORMAT(entryTiket, '%e %M %Y') AS entryTiket, DATE_FORMAT(updateTiket, '%e %M %Y') AS updateTiket,
+    SELECT t.tiketID AS id, a.tid, a.bagian, j.jenisMasalah, t.peruntukan, a.lokasi, a.nama AS kanca, DATE_FORMAT(entryTiket, '%e %M %Y') AS entryTiket, DATE_FORMAT(updateTiket, '%e %M %Y') AS updateTiket,
     COUNT(CASE WHEN DATEDIFF(updateTiket, entryTiket) <= j.targetHari THEN 1 ELSE null END) AS targetIn,
     COUNT(CASE WHEN DATEDIFF(updateTiket, entryTiket) > j.targetHari THEN 1 ELSE null END) AS targetOut
     FROM (
@@ -259,6 +274,24 @@ Tiket.jenisTiket = (result) => {
     SELECT ROW_NUMBER() OVER() AS id, jenisMasalah, targetHari 
     FROM jenistiket 
     WHERE targetHari >=0 AND jenisID < 18
+    `;
+  sql.query(query, (err, res) => {
+    if (err) {
+      console.log("error: ", err);
+      result(err, null);
+      return;
+    }
+    console.log("bagian: ", res);
+    result(null, res);
+  });
+};
+
+Tiket.peruntukan = (request, result) => {
+  let query = `
+    SELECT peruntukan, COUNT(tiketID) AS total
+    FROM tiket 
+    WHERE peruntukan != ''
+    GROUP BY peruntukan
     `;
   sql.query(query, (err, res) => {
     if (err) {

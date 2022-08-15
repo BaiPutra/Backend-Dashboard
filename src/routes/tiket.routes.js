@@ -1,6 +1,7 @@
 module.exports = (app) => {
   const tiket = require("../controllers/tiket.controller.js");
   var router = require("express").Router();
+  // const bodyParser = require('body-parser');
 
   router.get("/:bagian/:startDate/:endDate", tiket.getAll)
   
@@ -19,6 +20,10 @@ module.exports = (app) => {
   router.get("/perBagian", tiket.perBagian);
 
   router.get("/jenisTiket", tiket.jenisTiket)
+
+  router.get("/peruntukan", tiket.peruntukan);
+
+  router.post("/login", tiket.login);
   
   app.use("/api/tiket", router);
 };

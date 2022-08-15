@@ -1,5 +1,17 @@
 const Tiket = require("../models/tiket.js");
 
+exports.login = (req, res) => {
+  // console.log(req);
+  Tiket.login(req, (err, data) => {
+    if (err)
+      res.status(500).send({
+        message: err.message || "Some error occurred while retrieving tickets",
+      });
+    else res.send(data);
+  });
+  // res.send("test")
+}
+
 exports.getAll = (req, res) => {
   Tiket.getAll(req, (err, data) => {
     if (err)
@@ -89,3 +101,13 @@ exports.jenisTiket = (req, res) => {
     else res.send(data);
   })
 }
+
+exports.peruntukan = (req, res) => {
+  Tiket.peruntukan(req, (err, data) => {
+    if (err)
+      res.status(500).send({
+        message: err.message || "Some error occurred while retrieving tickets",
+      });
+    else res.send(data);
+  });
+};
