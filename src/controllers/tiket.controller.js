@@ -102,8 +102,8 @@ exports.jenisTiket = (req, res) => {
   })
 }
 
-exports.peruntukan = (req, res) => {
-  Tiket.peruntukan(req, (err, data) => {
+exports.terlambat = (req, res) => {
+  Tiket.terlambat(req, (err, data) => {
     if (err)
       res.status(500).send({
         message: err.message || "Some error occurred while retrieving tickets",

@@ -33,7 +33,7 @@ Tiket.login = (request, result) => {
 
 Tiket.getAll = (request, result) => {
   let query = `
-    SELECT t.tiketID AS id, a.tid, a.bagian, j.jenisMasalah, t.peruntukan, a.lokasi, a.nama AS kanca, DATE_FORMAT(entryTiket, '%e %M %Y') AS entryTiket, DATE_FORMAT(updateTiket, '%e %M %Y') AS updateTiket,
+    SELECT t.tiketID AS id, a.tid, a.bagian, j.jenisMasalah, a.lokasi, a.nama AS kanca, DATE_FORMAT(entryTiket, '%e %M %Y') AS entryTiket, DATE_FORMAT(updateTiket, '%e %M %Y') AS updateTiket,
     COUNT(CASE WHEN DATEDIFF(updateTiket, entryTiket) <= j.targetHari THEN 1 ELSE null END) AS targetIn,
     COUNT(CASE WHEN DATEDIFF(updateTiket, entryTiket) > j.targetHari THEN 1 ELSE null END) AS targetOut
     FROM (
@@ -150,7 +150,7 @@ Tiket.performaImplementor = (request, result) => {
 
 Tiket.perJenisMasalah = (request, result) => {
   const sqlQuery = `
-    SELECT ROW_NUMBER() OVER(ORDER BY tiketClose DESC) AS id, j.jenisMasalah AS nama, COUNT(1) AS tiketClose,
+    SELECT ROW_NUMBER() OVER(ORDER BY total DESC) AS id, j.jenisMasalah AS nama, COUNT(1) AS total,
     COUNT(CASE WHEN DATEDIFF(updateTiket, entryTiket) <= j.targetHari THEN 1 ELSE null END) AS targetIn,
     COUNT(CASE WHEN DATEDIFF(updateTiket, entryTiket) > j.targetHari THEN 1 ELSE null END) AS targetOut,
     ROUND(
@@ -161,7 +161,7 @@ Tiket.perJenisMasalah = (request, result) => {
     JOIN perangkat p
     ON t.tid = p.tid
     WHERE bagian IN (${request.params.bagian}) AND updateTiket BETWEEN '${request.params.startDate}' AND '${request.params.endDate}'
-    GROUP BY j.jenisMasalah ORDER BY tiketClose DESC;
+    GROUP BY j.jenisMasalah ORDER BY total DESC;
     `;
   sql.query(sqlQuery, (err, res) => {
     if (err) {
@@ -286,12 +286,15 @@ Tiket.jenisTiket = (result) => {
   });
 };
 
-Tiket.peruntukan = (request, result) => {
+Tiket.terlambat = (request, result) => {
   let query = `
-    SELECT peruntukan, COUNT(tiketID) AS total
-    FROM tiket 
-    WHERE peruntukan != ''
-    GROUP BY peruntukan
+    SELECT tiketID AS id, status, p.bagian, j.jenisMasalah, DATE_FORMAT(entryTiket, '%e %M %Y') AS tanggal, j.targetHari, DATEDIFF(CURRENT_DATE, entryTiket) AS rentangHari, DATEDIFF(CURRENT_DATE, entryTiket)-j.targetHari AS terlambat
+    FROM tiket t
+    JOIN perangkat p
+    ON t.tid = p.tid
+    JOIN jenistiket j
+    ON t.jenisMasalah = j.jenisID
+    WHERE p.bagian IN (${request.params.bagian}) AND status="PENDING" AND DATEDIFF(CURRENT_DATE, entryTiket)-j.targetHari > 0
     `;
   sql.query(query, (err, res) => {
     if (err) {

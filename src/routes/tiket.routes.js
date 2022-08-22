@@ -21,7 +21,7 @@ module.exports = (app) => {
 
   router.get("/jenisTiket", tiket.jenisTiket)
 
-  router.get("/peruntukan", tiket.peruntukan);
+  router.get("/terlambat/:bagian", tiket.terlambat);
 
   router.post("/login", tiket.login);
   
