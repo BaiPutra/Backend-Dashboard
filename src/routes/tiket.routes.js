@@ -4,8 +4,6 @@ module.exports = (app) => {
   // const bodyParser = require('body-parser');
 
   router.get("/:bagian/:startDate/:endDate", tiket.getAll)
-  
-  router.get("/closedTicketLastWeek", tiket.closedTicketLastWeek);
 
   router.get("/performaKanca/:bagian/:startDate/:endDate", tiket.performaKanca);
 
@@ -18,8 +16,6 @@ module.exports = (app) => {
   router.get("/perMinggu", tiket.perMinggu);
 
   router.get("/perBagian", tiket.perBagian);
-
-  router.get("/jenisTiket", tiket.jenisTiket)
 
   router.get("/terlambat/:bagian", tiket.terlambat);
 

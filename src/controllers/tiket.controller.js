@@ -52,16 +52,6 @@ exports.perTanggal = (req, res) => {
   });
 };
 
-exports.closedTicketLastWeek = (req, res) => {
-  Tiket.closedTicketLastWeek((err, data) => {
-    if (err)
-      res.status(500).send({
-        message: err.message || "Some error occurred",
-      });
-    else res.send(data);
-  });
-};
-
 exports.perJenisMasalah = (req, res) => {
   Tiket.perJenisMasalah(req, (err, data) => {
     if (err)
@@ -91,16 +81,6 @@ exports.perBagian = (req, res) => {
     else res.send(data);
   });
 };
-
-exports.jenisTiket = (req, res) => {
-  Tiket.jenisTiket((err, data) => {
-    if (err)
-      res.status(500).send({
-        message:err.message || "Some error occured",
-      })
-    else res.send(data);
-  })
-}
 
 exports.terlambat = (req, res) => {
   Tiket.terlambat(req, (err, data) => {
